@@ -2,67 +2,63 @@ This project was originally contained entirely on https://github.com/jeffhammond
 
 TODO: Convert from MediaWiki to MarkDown
 
-= What is it? =
+# What is it?
 
-MARPN stands for MPI with Arbitrary Ranks-Per-Node.  I developed this for Blue Gene/Q but it is, in principle, general purpose.  However, there is little reason to use it on any other machine, so only Blue Gene/Q is supported right now.  If you want me to add support for Blue Gene/P, send [[User:Jhammond|me]] an email.
+MARPN stands for MPI with Arbitrary Ranks-Per-Node.  I developed this for Blue Gene/Q but it is, in principle, general purpose.  On most machines, arbitrary ranks-per-node is trivial, but they have to be homogeneous across the machine.  If you find that restrictive, create a Github issue to let me know that you need this feature supported.
 
-= Credit =
+# Credit
 
 MARPN was written by Jeff Hammond using MPI-related tools developed by Todd Gamblin.  This project would not have been possible without Todd's help, but Jeff is responsible for supporting it and deserves all the blame for its shortcomings.
 
-= Why would you use this? =
+# Why would you use this?
 
 You should only use MARPN as a means of last resort.  There are better ways to solve the problem that it solves but these require work.
 
-== Application Rigidity ==
+## Application Rigidity
 
-Your application is rigid and demands that the process count is directly related to the domain decomposition.  The developers of the application are unwilling to use <tt>MPI_Comm_split</tt> and search-and-replace on <tt>MPI_COMM_WORLD</tt> to fix the problem directly.
+Your application is rigid and demands that the process count is directly related to the domain decomposition.  The developers of the application are unwilling to use `MPI_Comm_split`and search-and-replace on `MPI_COMM_WORLD` to fix the problem directly.
 
-== CPU Performance ==
+## CPU Performance
 
 If your application is limited by some aspect of the memory hierarchy and does not use threads, it might be beneficial to only do work on 3 of the 4 hardware threads per core as a compromise between instruction issue rate (which requires >2 threads to saturate) and memory bandwidth.
 
-== Memory ==
+## Memory
 
 If your application does not use threads and you want to run on the maximum number of hardware threads possible but you cannot live with the memory available when 64 processes are used, you might find that e.g. 48 processes is sufficient.
 
-''Unfortunately, MARPN does not yet address the memory issue, but I know how to implement it and will do so in the future if there is sufficient demand.''  
+_Unfortunately, MARPN does not yet address the memory issue, but I know how to implement it and will do so in the future if there is sufficient demand._
 
-A solution to the memory issue is to override <tt>malloc</tt> to allocate memory in another processes address space using [[PAMI]] active-messages, which - in conjunction with the [[Blue_Gene/Q#Abusing_the_common_heap_the_common_heap|the common heap]] - will allow you to use more memory than exists in one processes address space. This solution is '''E-V-I-L''' and will make me feel very bad for a long time, so you might have to incentivize me with something that will help numb the pain.
+A solution to the memory issue is to override `malloc` to allocate memory in another processes address space using PAMI active-messages, which - in conjunction with the `BG_MAPCOMMONHEAP=1` - will allow you to use more memory than exists in one processes address space. This solution is *E-V-I-L* and will make me feel very bad for a long time, so you might have to incentivize me with something that will help numb the pain.
 
-= How does it work? =
+# How does it work?
 
-* <tt>MPI_COMM_WORLD</tt> is intercepted using the MPI profiling interface and substituted for the subcommunicator that contains the desired number of ranks-per-node.
+* `MPI_COMM_WORLD` is intercepted using the MPI profiling interface and substituted for the subcommunicator that contains the desired number of ranks-per-node.
 * Inactive processes go to sleep for 48 hours so that they do not consume CPU resources.
-* <tt>MPI_Abort</tt> is called instead of <tt>MPI_Finalize</tt> (after a barrier on the active process communicator) because otherwise the sleeping processes would keep the job idling until it timed out.
+* `MPI_Abort` is called instead of `MPI_Finalize` (after a barrier on the active process communicator) because otherwise the sleeping processes would keep the job idling until it timed out.
 
-== FAQ ==
+## FAQ
 
 * Is it topology-aware on Blue Gene/Q?  Yes, the active ranks are selected in a breadth-first manner.
-* Why can't you just call <tt>MPI_Finalize</tt> instead of <tt>sleep(48*60*60)</tt>?  Because that will cause the inactive processes to spin in a barrier and create contention for execution resources with the active processes.
-* Is there a way to call <tt>MPI_Finalize</tt> properly?  Yes, but it requires programming the wake-up unit and I don't care to do this.
-* Does it work with threads?  No, but only because I did not bother to implement <tt>MPI_Init_thread</tt> properly.  If you can use threads, why do you need MARPN?
+* Why can't you just call `MPI_Finalize` instead of `sleep(48*60*60)`?  Because that will cause the inactive processes to spin in a barrier and create contention for execution resources with the active processes.
+* Is there a way to call `MPI_Finalize` properly?  Yes, but it requires programming the wake-up unit and I don't care to do this.
+* Does it work with threads?  No, but only because I did not bother to implement `MPI_Init_thread` properly.  If you can use threads, why do you need MARPN?
 
-= How do you use it? =
+# How do you use it?
 
 1. Download [[File:Marpn.C]].
 
-2. <tt>mpicxx -c -g -O2 Marpn.C</tt>
+2. `mpicxx -c -g -O2 Marpn.C`
 
-3. <tt>ar -r libmarpn.a Marpn.o</tt>
+3. `ar -r libmarpn.a Marpn.o`
 
 4. Link your applications with <tt>libmarpn.a</tt> at the end.
 
-5. Submit with the environment variable <tt>MARPN_RANKS_PER_NODE</tt> set to the number of ranks-per-node you want (it must be less than or equal to the number available) as well as <tt>BG_COREDUMPDISABLED=1</tt>.  ''You have to disable core files due to the design described above.
+5. Submit with the environment variable `MARPN_RANKS_PER_NODE` set to the number of ranks-per-node you want (it must be less than or equal to the number available) as well as `BG_COREDUMPDISABLED=1`.  _You have to disable core files due to the design described above._
 
-== ALCF Installation ==
+## Hello, World!
 
-See <tt>vesta:/home/projects/pami/MARPN/</tt> if you don't want to compile it yourself.
-
-== Hello, World! ==
-
-=== Source ===
-<pre>
+### Source
+```
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
@@ -82,22 +78,22 @@ int main(int argc, char ** argv)
 
     return 0;
 }
-</pre>
+```
 
-=== Build ===
-<pre>
+### Build
+```
 mpicc -g -O2 -Wall  hello.o libmpiarbrpn.a -o hello.x
-</pre>
+```
 
-=== Submit ===
-<pre>
+### Submit
+```
 qsub -t 20 -n 1 --mode=c64 --env MARPN_DEBUG=1:MARPN_RANKS_PER_NODE=48:BG_COREDUMPDISABLED=1 ./hello.x
-</pre>
+```
 
-=== Output ===
+### Output
 
-==== <tt>stdout</tt> ====
-<pre>
+#### `stdout`
+```
 Hello from 4 of 48 processors
 Hello from 3 of 48 processors
 Hello from 5 of 48 processors
@@ -146,10 +142,10 @@ Hello from 26 of 48 processors
 Hello from 23 of 48 processors
 Hello from 22 of 48 processors
 Hello from 21 of 48 processors
-</pre>
+```
 
-==== <tt>stderr</tt> ====
-<pre>
+#### `stderr`
+```
 rank 14 (core 3, hwtid 2) is included in the new world 
 rank 13 (core 3, hwtid 1) is included in the new world 
 rank 12 (core 3, hwtid 0) is included in the new world 
@@ -241,15 +237,15 @@ Abort(0) on node 57 (rank 57 in comm 1140850688): application called MPI_Abort(M
 Abort(0) on node 56 (rank 56 in comm 1140850688): application called MPI_Abort(MPI_COMM_WORLD, 0) - process 56
 Abort(0) on node 4 (rank 4 in comm 1140850688): application called MPI_Abort(MPI_COMM_WORLD, 0) - process 4
 Abort(0) on node 5 (rank 5 in comm 1140850688): application called MPI_Abort(MPI_COMM_WORLD, 0) - process 5
-</pre>
+```
 
-== LAMMPS ==
+## LAMMPS
 
-See [[LAMMPS]] and follow the directions there but add <tt>MPI_LIB += libmpiarbrpn.a</tt> at the end of the MPI section.  Do not compile with the OpenMP module as MARPN does not support <tt>MPI_Init_thread</tt>.
+See [[LAMMPS]] and follow the directions there but add `MPI_LIB += libmpiarbrpn.a` at the end of the MPI section.  Do not compile with the OpenMP module as MARPN does not support `MPI_Init_thread`.
 
-=== Output ===
+### Output
 
-<pre>
+```
 [jhammond@vestalac1 bench]$ for i in `/bin/ls *marpn*ing` ; do grep MPI -H $i ; grep time -H $i ; done
 
 eam2.xl-omp.n128.c32.nomarpn.log.scaling:  using 2 OpenMP thread(s) per MPI task
@@ -307,4 +303,4 @@ eam2.xl-omp.n128.c64.f48.marpn.log.scaling:Neigh time (%) = 1.77081 (10.5376)
 eam2.xl-omp.n128.c64.f48.marpn.log.scaling:Comm  time (%) = 0.85384 (5.08094)
 eam2.xl-omp.n128.c64.f48.marpn.log.scaling:Outpt time (%) = 0.016007 (0.0952529)
 eam2.xl-omp.n128.c64.f48.marpn.log.scaling:Other time (%) = 0.301523 (1.79427)
-</pre>
+```
