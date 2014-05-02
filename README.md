@@ -1,8 +1,6 @@
-This project was originally contained entirely on https://github.com/jeffhammond/HPCInfo/wiki/MARPN
-
 # What is it?
 
-MARPN stands for MPI with Arbitrary Ranks-Per-Node.  I developed this for Blue Gene/Q but it is, in principle, general purpose.  On most machines, arbitrary ranks-per-node is trivial, but they have to be homogeneous across the machine.  If you find that restrictive, create a Github issue to let me know that you need this feature supported.
+MARPN stands for MPI with Arbitrary Ranks-Per-Node.  I developed this for Blue Gene/Q but it is, in principle, general purpose.  On most machines, arbitrary ranks-per-node is trivial, but some supercomputers require this to be homogeneous across the machine.  If you find that restrictive, create a Github issue to let me know that you need this feature supported.
 
 # Credit
 
