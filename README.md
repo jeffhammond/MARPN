@@ -1,6 +1,4 @@
-This project was originally contained entirely on https://github.com/jeffhammond/HPCInfo/wiki/MARPN...
-
-TODO: Convert from MediaWiki to MarkDown
+This project was originally contained entirely on https://github.com/jeffhammond/HPCInfo/wiki/MARPN
 
 # What is it?
 
