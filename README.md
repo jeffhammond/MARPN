@@ -241,7 +241,7 @@ Abort(0) on node 5 (rank 5 in comm 1140850688): application called MPI_Abort(MPI
 
 ## LAMMPS
 
-See [[LAMMPS]] and follow the directions there but add `MPI_LIB += libmpiarbrpn.a` at the end of the MPI section.  Do not compile with the OpenMP module as MARPN does not support `MPI_Init_thread`.
+Build LAMMPS as you would normally but add `MPI_LIB += libmpiarbrpn.a` at the end of the MPI section.  Do not compile with the OpenMP module as MARPN does not support `MPI_Init_thread`.
 
 ### Output
 
