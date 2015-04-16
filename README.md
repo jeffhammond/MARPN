@@ -4,7 +4,7 @@ MARPN stands for MPI with Arbitrary Ranks-Per-Node.  I developed this for Blue G
 
 # Credit
 
-MARPN was written by Jeff Hammond using MPI-related tools developed by Todd Gamblin.  This project would not have been possible without Todd's help, but Jeff is responsible for supporting it and deserves all the blame for its shortcomings.
+MARPN was written by Jeff Hammond using MPI-related tools developed by Todd Gamblin (specifically, [wrap](https://github.com/scalability-llnl/wrap)).  This project would not have been possible without Todd's help, but Jeff is responsible for supporting it and deserves all the blame for its shortcomings.
 
 # Why would you use this?
 
